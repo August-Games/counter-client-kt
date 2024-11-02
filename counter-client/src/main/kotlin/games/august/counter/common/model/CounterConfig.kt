@@ -27,5 +27,6 @@ data class CounterConfig(
         val maxFailureRetries: Int = 3,
         val minBackoff: Duration = 500.milliseconds,
         val maxBackoff: Duration = 60.seconds,
+        val getBackoffJitter: () -> Double = { Math.random() * 2 },
     )
 }

@@ -6,7 +6,7 @@ import kotlinx.datetime.Instant
 
 data class CounterUpdate(
     val tag: String,
-    val added: BigNumber,
-    val removed: BigNumber,
+    val added: BigNumber = BigNumber.create(0),
+    val removed: BigNumber = BigNumber.create(0),
     val timestamp: Instant = Clock.System.now(),
 )

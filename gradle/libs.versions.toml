@@ -6,8 +6,9 @@
 kotlin = "2.0.20"
 kotlinxDatetime = "0.6.1"
 kotlinxSerializationJSON = "1.7.2"
-kotlinxCoroutines = "1.8.1"
+kotlinxCoroutines = "1.9.0"
 ktor = "3.0.0"
+truth = "1.4.4"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -17,6 +18,10 @@ kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", 
 
 ktorClientCioEngine = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktorClientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+
+googleTruth = { module = "com.google.truth:truth", version.ref = "truth" }
+kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+kotlinxCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 
 # Libraries can be bundled together for easier import
 [bundles]

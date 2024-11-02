@@ -16,6 +16,9 @@ dependencies {
     implementation(libs.bundles.ktorClient)
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(libs.kotlinTestJunit)
+    testImplementation(libs.kotlinxCoroutinesTest)
+    testImplementation(libs.googleTruth)
 }
 
 tasks.test {

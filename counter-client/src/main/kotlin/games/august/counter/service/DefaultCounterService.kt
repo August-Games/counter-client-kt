@@ -5,6 +5,7 @@ import games.august.counter.service.api.CounterApi
 import games.august.counter.service.api.model.BatchUpdateCounterRequest
 import games.august.counter.service.mapping.toRequest
 import games.august.counter.service.model.CounterUpdate
+import games.august.counter.service.model.FlushFailureException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -16,6 +17,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.jvm.Throws
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
 
@@ -23,6 +25,7 @@ internal class DefaultCounterService(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
     private val config: CounterConfig,
     private val counterApi: CounterApi,
+    private val onPeriodicFlushFailure: (FlushFailureException) -> Unit = {},
 ) : CounterService {
     private val queuedUpdates = ConcurrentHashMap<String, List<CounterUpdate>>()
     private val queuedItemCount = AtomicInteger(0)
@@ -42,8 +45,15 @@ internal class DefaultCounterService(
             }
         flushJob =
             scope.launch {
+                delay(config.flushConfig.cooldown)
                 while (isActive) {
-                    if (!paused) flush()
+                    if (!paused) {
+                        try {
+                            flush()
+                        } catch (e: FlushFailureException) {
+                            onPeriodicFlushFailure(e)
+                        }
+                    }
                     delay(config.flushConfig.cooldown)
                 }
             }
@@ -57,6 +67,7 @@ internal class DefaultCounterService(
         paused = true
     }
 
+    @Throws(FlushFailureException::class)
     override suspend fun shutdown(flushPendingUpdates: Boolean) {
         if (!flushPendingUpdates) {
             periodicQueuedItemCountUpdateJob?.cancel()
@@ -74,8 +85,10 @@ internal class DefaultCounterService(
     }
 
     override fun updateCounter(update: CounterUpdate): Boolean {
+        periodicQueuedItemCountUpdateJob ?: return false
+        flushJob ?: return false
         val size = queuedItemCount.get()
-        if (size > config.flushConfig.maxBufferSize) return false
+        if (size >= config.flushConfig.maxBufferSize) return false
         queuedUpdates.compute(update.tag) { tag, previousUpdates ->
             queuedItemCount.incrementAndGet()
             previousUpdates?.plus(update) ?: listOf(update)
@@ -84,8 +97,10 @@ internal class DefaultCounterService(
     }
 
     override fun batchUpdateCounter(updates: List<CounterUpdate>): Boolean {
+        periodicQueuedItemCountUpdateJob ?: return false
+        flushJob ?: return false
         val size = queuedItemCount.get()
-        if (size > config.flushConfig.maxBufferSize) return false
+        if (size >= config.flushConfig.maxBufferSize) return false
         for ((tag, updates) in updates.groupBy { it.tag }) {
             queuedUpdates.compute(tag) { tag, previousUpdates ->
                 queuedItemCount.updateAndGet { it + updates.size }
@@ -95,33 +110,34 @@ internal class DefaultCounterService(
         return true
     }
 
+    @Throws(FlushFailureException::class)
     private suspend fun flush(
         batch: List<CounterUpdate> = computeBatch(),
         failureCount: Int = 0,
     ) {
-        try {
-            counterApi.batchUpdateCounters(
+        if (batch.isEmpty()) return
+        counterApi
+            .batchUpdateCounters(
                 batchUpdateCounterRequest =
                     BatchUpdateCounterRequest(
                         updates = batch.map(CounterUpdate::toRequest),
                     ),
-            )
-        } catch (e: Exception) {
-            if (failureCount < config.flushErrorHandling.maxFailureRetries) {
-                val jitter = Math.random() * 2
-                val backoff =
-                    (2.0.pow(failureCount.toDouble()) + jitter)
-                        .seconds
-                        .coerceIn(
-                            minimumValue = config.flushErrorHandling.minBackoff,
-                            maximumValue = config.flushErrorHandling.maxBackoff,
-                        )
-                delay(backoff)
-                flush(batch, failureCount + 1)
-            } else {
-                throw e
+            ).onFailure { e ->
+                if (failureCount < config.flushErrorHandling.maxFailureRetries) {
+                    val jitter = config.flushErrorHandling.getBackoffJitter()
+                    val backoff =
+                        (2.0.pow(failureCount.toDouble() + 1.0) + jitter)
+                            .seconds
+                            .coerceIn(
+                                minimumValue = config.flushErrorHandling.minBackoff,
+                                maximumValue = config.flushErrorHandling.maxBackoff,
+                            )
+                    delay(backoff)
+                    flush(batch, failureCount + 1)
+                } else {
+                    throw FlushFailureException(e, "Failed to flush batch after $failureCount attempts")
+                }
             }
-        }
     }
 
     private fun computeBatch(): List<CounterUpdate> {

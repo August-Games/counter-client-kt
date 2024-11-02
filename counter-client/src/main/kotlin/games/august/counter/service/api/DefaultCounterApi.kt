@@ -6,7 +6,7 @@ import games.august.counter.service.api.model.GetCountAggregateRequest
 import games.august.counter.service.api.model.UpdateCounterRequest
 
 internal class DefaultCounterApi : CounterApi {
-    private val baseUrl = "https://"
+    private val baseUrl = "https://counter-np.august.games"
 
     override suspend fun updateCounter(updateCounterRequest: UpdateCounterRequest): Result<Unit> {
         TODO("Not yet implemented")
