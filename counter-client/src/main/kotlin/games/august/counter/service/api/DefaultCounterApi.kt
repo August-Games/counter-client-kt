@@ -55,7 +55,7 @@ internal class DefaultCounterApi(
         }
 
     override suspend fun batchUpdateCounters(
-        apiToken: String,
+        apiKey: String,
         batchUpdateCounterRequest: BatchUpdateCounterRequest,
     ): Result<Unit> =
         runCatching {
@@ -64,7 +64,7 @@ internal class DefaultCounterApi(
                     method = HttpMethod.Post
                     headers {
                         append(HttpHeaders.Accept, "application/json")
-                        append("X-Api-Key", apiToken)
+                        append("X-Api-Key", apiKey)
                         append(HttpHeaders.UserAgent, "ktor client")
                     }
                     setBody(batchUpdateCounterRequest)

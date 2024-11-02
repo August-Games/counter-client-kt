@@ -12,7 +12,7 @@ internal interface CounterApi {
     ): Result<Unit>
 
     suspend fun batchUpdateCounters(
-        apiToken: String,
+        apiKey: String,
         batchUpdateCounterRequest: BatchUpdateCounterRequest,
     ): Result<Unit>
 

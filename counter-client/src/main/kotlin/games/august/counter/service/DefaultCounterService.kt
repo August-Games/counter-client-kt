@@ -118,6 +118,7 @@ internal class DefaultCounterService(
         if (batch.isEmpty()) return
         counterApi
             .batchUpdateCounters(
+                apiKey = config.apiKey,
                 batchUpdateCounterRequest =
                     BatchUpdateCounterRequest(
                         updates = batch.map(CounterUpdate::toRequest),
