@@ -7,7 +7,8 @@ plugins {
 }
 
 dependencies {
-
+    implementation(project(":counter-client"))
+    implementation(libs.bundles.kotlinxEcosystem)
 }
 
 application {

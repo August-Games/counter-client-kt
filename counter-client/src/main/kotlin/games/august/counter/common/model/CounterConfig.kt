@@ -24,6 +24,7 @@ data class CounterConfig(
     )
 
     data class FlushErrorHandling(
+        val reAddFailedUpdates: Boolean = true,
         val maxFailureRetries: Int = 3,
         val minBackoff: Duration = 500.milliseconds,
         val maxBackoff: Duration = 60.seconds,

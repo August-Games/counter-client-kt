@@ -32,6 +32,7 @@ internal class DefaultCounterApi(
         },
 ) : CounterApi {
     private val baseUrl = "https://counter-np.august.games"
+//    private val baseUrl = "http://127.0.0.1:8080"
 
     override suspend fun updateCounter(
         apiToken: String,
@@ -42,6 +43,7 @@ internal class DefaultCounterApi(
                 httpClient.request("$baseUrl/counter/update") {
                     method = HttpMethod.Post
                     headers {
+                        append(HttpHeaders.ContentType, "application/json")
                         append(HttpHeaders.Accept, "application/json")
                         append("X-Api-Key", apiToken)
                         append(HttpHeaders.UserAgent, "ktor client")
@@ -63,6 +65,7 @@ internal class DefaultCounterApi(
                 httpClient.request("$baseUrl/counter/batch-update") {
                     method = HttpMethod.Post
                     headers {
+                        append(HttpHeaders.ContentType, "application/json")
                         append(HttpHeaders.Accept, "application/json")
                         append("X-Api-Key", apiKey)
                         append(HttpHeaders.UserAgent, "ktor client")
@@ -85,6 +88,7 @@ internal class DefaultCounterApi(
                 httpClient.request("$baseUrl/$tag/get") {
                     method = HttpMethod.Post
                     headers {
+                        append(HttpHeaders.ContentType, "application/json")
                         append(HttpHeaders.Accept, "application/json")
                         append("X-Api-Key", apiToken)
                         append(HttpHeaders.UserAgent, "ktor client")

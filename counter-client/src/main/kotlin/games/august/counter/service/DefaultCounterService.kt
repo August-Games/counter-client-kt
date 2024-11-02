@@ -85,8 +85,8 @@ internal class DefaultCounterService(
     }
 
     override fun updateCounter(update: CounterUpdate): Boolean {
-        periodicQueuedItemCountUpdateJob ?: return false
-        flushJob ?: return false
+        periodicQueuedItemCountUpdateJob ?: errorNotStarted()
+        flushJob ?: errorNotStarted()
         val size = queuedItemCount.get()
         if (size >= config.flushConfig.maxBufferSize) return false
         queuedUpdates.compute(update.tag) { tag, previousUpdates ->
@@ -97,8 +97,8 @@ internal class DefaultCounterService(
     }
 
     override fun batchUpdateCounter(updates: List<CounterUpdate>): Boolean {
-        periodicQueuedItemCountUpdateJob ?: return false
-        flushJob ?: return false
+        periodicQueuedItemCountUpdateJob ?: errorNotStarted()
+        flushJob ?: errorNotStarted()
         val size = queuedItemCount.get()
         if (size >= config.flushConfig.maxBufferSize) return false
         for ((tag, updates) in updates.groupBy { it.tag }) {
@@ -109,6 +109,8 @@ internal class DefaultCounterService(
         }
         return true
     }
+
+    private fun errorNotStarted(): Nothing = throw IllegalStateException("CounterService.start() must be called before updating counters")
 
     @Throws(FlushFailureException::class)
     private suspend fun flush(
@@ -136,6 +138,7 @@ internal class DefaultCounterService(
                     delay(backoff)
                     flush(batch, failureCount + 1)
                 } else {
+                    batchUpdateCounter(batch) // re-add these updates to be tried again later at some point
                     throw FlushFailureException(e, "Failed to flush batch after $failureCount attempts")
                 }
             }
