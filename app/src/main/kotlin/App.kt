@@ -38,7 +38,7 @@ fun main() {
                     update =
                         CounterUpdate(
                             tag = "example-app-counter",
-                            added = BigNumber.create(1),
+                            added = BigNumber.create(amount = 1),
                         ),
                 )
             if (!added) {
