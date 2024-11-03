@@ -22,6 +22,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -29,25 +30,32 @@ import kotlin.time.Duration.Companion.seconds
 class DefaultCounterServiceTest {
     private val counterApiTestDelegate =
         object : CounterApi {
-            override suspend fun updateCounter(updateCounterRequest: UpdateCounterRequest): Result<Unit> = error("Stub!")
+            override suspend fun updateCounter(
+                apiToken: String,
+                updateCounterRequest: UpdateCounterRequest,
+            ): Result<Unit> = error("Stub!")
 
-            override suspend fun batchUpdateCounters(batchUpdateCounterRequest: BatchUpdateCounterRequest): Result<Unit> = error("Stub!")
+            override suspend fun batchUpdateCounters(
+                apiToken: String,
+                batchUpdateCounterRequest: BatchUpdateCounterRequest,
+            ): Result<Unit> = error("Stub!")
 
             override suspend fun getCountAggregate(
+                apiToken: String,
                 tag: String,
                 updateCounterRequest: GetCountAggregateRequest,
             ): Result<CounterAggregate> = error("Stub!")
         }
 
     @Test
-    fun `Test updateCounter+batchUpdateCounter returns false when start not called`() =
+    fun `Test updateCounter+batchUpdateCounter throws IllegalStateException when start not called`() =
         runTest {
             val service =
                 createService(
                     scope = this,
                     counterApi = object : CounterApi by counterApiTestDelegate {},
                 )
-            assertThat(
+            assertThrows<IllegalStateException> {
                 service.updateCounter(
                     update =
                         CounterUpdate(
@@ -55,9 +63,9 @@ class DefaultCounterServiceTest {
                             added = BigNumber.create(100),
                             timestamp = getNow(),
                         ),
-                ),
-            ).isFalse()
-            assertThat(
+                )
+            }
+            assertThrows<IllegalStateException> {
                 service.batchUpdateCounter(
                     updates =
                         listOf(
@@ -67,8 +75,8 @@ class DefaultCounterServiceTest {
                                 timestamp = getNow(),
                             ),
                         ),
-                ),
-            ).isFalse()
+                )
+            }
         }
 
     @Test
@@ -258,7 +266,10 @@ class DefaultCounterServiceTest {
                         ),
                     counterApi =
                         object : CounterApi by counterApiTestDelegate {
-                            override suspend fun batchUpdateCounters(batchUpdateCounterRequest: BatchUpdateCounterRequest): Result<Unit> {
+                            override suspend fun batchUpdateCounters(
+                                apiToken: String,
+                                batchUpdateCounterRequest: BatchUpdateCounterRequest,
+                            ): Result<Unit> {
                                 flushRequests += batchUpdateCounterRequest // So we can verify when flushing happens
                                 return Result.success(Unit)
                             }
@@ -337,7 +348,10 @@ class DefaultCounterServiceTest {
                         ),
                     counterApi =
                         object : CounterApi by counterApiTestDelegate {
-                            override suspend fun batchUpdateCounters(batchUpdateCounterRequest: BatchUpdateCounterRequest): Result<Unit> {
+                            override suspend fun batchUpdateCounters(
+                                apiToken: String,
+                                batchUpdateCounterRequest: BatchUpdateCounterRequest,
+                            ): Result<Unit> {
                                 flushRequests += batchUpdateCounterRequest // So we can verify when flushing happens
                                 return Result.failure(RuntimeException("test api failure"))
                             }
@@ -417,7 +431,10 @@ class DefaultCounterServiceTest {
                         ),
                     counterApi =
                         object : CounterApi by counterApiTestDelegate {
-                            override suspend fun batchUpdateCounters(batchUpdateCounterRequest: BatchUpdateCounterRequest): Result<Unit> {
+                            override suspend fun batchUpdateCounters(
+                                apiToken: String,
+                                batchUpdateCounterRequest: BatchUpdateCounterRequest,
+                            ): Result<Unit> {
                                 flushRequests += batchUpdateCounterRequest // So we can verify when flushing happens
                                 return batchUpdateReturnValue
                             }
@@ -493,7 +510,10 @@ class DefaultCounterServiceTest {
                         ),
                     counterApi =
                         object : CounterApi by counterApiTestDelegate {
-                            override suspend fun batchUpdateCounters(batchUpdateCounterRequest: BatchUpdateCounterRequest): Result<Unit> {
+                            override suspend fun batchUpdateCounters(
+                                apiToken: String,
+                                batchUpdateCounterRequest: BatchUpdateCounterRequest,
+                            ): Result<Unit> {
                                 flushRequests += batchUpdateCounterRequest // So we can verify when flushing happens
                                 return Result.success(Unit)
                             }

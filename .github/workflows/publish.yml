@@ -19,6 +19,9 @@ jobs:
           java-version: 17
           distribution: 'zulu'
 
+      - name: Run tests
+        run: ./gradlew :counter-client:test
+
       - name: Install gpg secret key
         run: cat <(echo -e "${{ secrets.SIGNING_KEY_SECRET_ARMOR_EXPORT }}") | gpg --batch --import
 
