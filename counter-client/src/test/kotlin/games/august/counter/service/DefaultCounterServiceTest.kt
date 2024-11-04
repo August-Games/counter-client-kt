@@ -356,31 +356,32 @@ class DefaultCounterServiceTest {
                                 return Result.failure(RuntimeException("test api failure"))
                             }
                         },
-                    listener =
-                        object : CounterServiceListener {
-                            override fun onFlushRetry(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                                numFailures: Int,
-                            ) {
-                            }
-
-                            override fun onFlushFailure(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                                numFailures: Int,
-                                batchRequeued: Boolean,
-                            ) {
-                                periodicFlushFailureCount++
-                            }
-
-                            override fun onFlushSuccess(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                            ) {
-                            }
-                        },
                 )
+            service.setListener(
+                object : CounterServiceListener {
+                    override fun onFlushRetry(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                        numFailures: Int,
+                    ) {
+                    }
+
+                    override fun onFlushFailure(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                        numFailures: Int,
+                        batchRequeued: Boolean,
+                    ) {
+                        periodicFlushFailureCount++
+                    }
+
+                    override fun onFlushSuccess(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                    ) {
+                    }
+                },
+            )
             service.start()
             assertThat(
                 service.updateCounter(
@@ -460,31 +461,32 @@ class DefaultCounterServiceTest {
                                 return batchUpdateReturnValue
                             }
                         },
-                    listener =
-                        object : CounterServiceListener {
-                            override fun onFlushRetry(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                                numFailures: Int,
-                            ) {
-                            }
-
-                            override fun onFlushFailure(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                                numFailures: Int,
-                                batchRequeued: Boolean,
-                            ) {
-                                periodicFlushFailureCount++
-                            }
-
-                            override fun onFlushSuccess(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                            ) {
-                            }
-                        },
                 )
+            service.setListener(
+                object : CounterServiceListener {
+                    override fun onFlushRetry(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                        numFailures: Int,
+                    ) {
+                    }
+
+                    override fun onFlushFailure(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                        numFailures: Int,
+                        batchRequeued: Boolean,
+                    ) {
+                        periodicFlushFailureCount++
+                    }
+
+                    override fun onFlushSuccess(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                    ) {
+                    }
+                },
+            )
             service.start()
             assertThat(
                 service.updateCounter(
@@ -560,32 +562,33 @@ class DefaultCounterServiceTest {
                                 return Result.success(Unit)
                             }
                         },
-                    listener =
-                        object : CounterServiceListener {
-                            override fun onFlushRetry(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                                numFailures: Int,
-                            ) {
-                                periodicFlushFailureCount++
-                            }
-
-                            override fun onFlushFailure(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                                numFailures: Int,
-                                batchRequeued: Boolean,
-                            ) {
-                                periodicFlushFailureCount++
-                            }
-
-                            override fun onFlushSuccess(
-                                elapsedTime: Duration,
-                                batchSize: Int,
-                            ) {
-                            }
-                        },
                 )
+            service.setListener(
+                object : CounterServiceListener {
+                    override fun onFlushRetry(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                        numFailures: Int,
+                    ) {
+                        periodicFlushFailureCount++
+                    }
+
+                    override fun onFlushFailure(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                        numFailures: Int,
+                        batchRequeued: Boolean,
+                    ) {
+                        periodicFlushFailureCount++
+                    }
+
+                    override fun onFlushSuccess(
+                        elapsedTime: Duration,
+                        batchSize: Int,
+                    ) {
+                    }
+                },
+            )
             service.start()
 
             val jobs = mutableListOf<Job>()
@@ -642,34 +645,10 @@ class DefaultCounterServiceTest {
                 apiKey = "test-api-key",
             ),
         counterApi: CounterApi = object : CounterApi by counterApiTestDelegate {},
-        listener: CounterServiceListener =
-            object : CounterServiceListener {
-                override fun onFlushRetry(
-                    elapsedTime: Duration,
-                    batchSize: Int,
-                    numFailures: Int,
-                ) {
-                }
-
-                override fun onFlushFailure(
-                    elapsedTime: Duration,
-                    batchSize: Int,
-                    numFailures: Int,
-                    batchRequeued: Boolean,
-                ) {
-                }
-
-                override fun onFlushSuccess(
-                    elapsedTime: Duration,
-                    batchSize: Int,
-                ) {
-                }
-            },
     ): CounterService =
         DefaultCounterService(
             scope = scope,
             config = config,
             counterApi = counterApi,
-            listener = listener,
         )
 }

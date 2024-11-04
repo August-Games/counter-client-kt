@@ -35,15 +35,13 @@ interface CounterService {
 
     fun batchUpdateCounter(updates: List<CounterUpdate>): Boolean
 
+    fun setListener(listener: CounterServiceListener?)
+
     companion object {
-        fun createDefault(
-            config: CounterConfig,
-            listener: CounterServiceListener,
-        ): CounterService =
+        fun createDefault(config: CounterConfig): CounterService =
             DefaultCounterService(
                 config = config,
                 counterApi = DefaultCounterApi(),
-                listener = listener,
             )
     }
 }

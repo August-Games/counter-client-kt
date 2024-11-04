@@ -14,6 +14,39 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
 fun main() {
+    val listener =
+        object : CounterServiceListener {
+            override fun onFlushRetry(
+                elapsedTime: Duration,
+                batchSize: Int,
+                numFailures: Int,
+            ) {
+                val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
+                println("Retrying flush after $elapsedTimeFormatted for $batchSize updates. Failed $numFailures times.")
+            }
+
+            override fun onFlushFailure(
+                elapsedTime: Duration,
+                batchSize: Int,
+                numFailures: Int,
+                batchRequeued: Boolean,
+            ) {
+                val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
+                println(
+                    "Failed flushing $batchSize updates after $elapsedTimeFormatted, and $numFailures failures. Re-queued: $batchRequeued",
+                )
+            }
+
+            override fun onFlushSuccess(
+                elapsedTime: Duration,
+                batchSize: Int,
+            ) {
+                val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
+                println(
+                    "Successfully flushed $batchSize updates after $elapsedTimeFormatted",
+                )
+            }
+        }
     // Create CounterService, passing in API key
     val service =
         CounterService.createDefault(
@@ -27,40 +60,8 @@ fun main() {
                             maxBackoff = 1.seconds,
                         ),
                 ),
-            listener =
-                object : CounterServiceListener {
-                    override fun onFlushRetry(
-                        elapsedTime: Duration,
-                        batchSize: Int,
-                        numFailures: Int,
-                    ) {
-                        val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
-                        println("Retrying flush after $elapsedTimeFormatted for $batchSize updates. Failed $numFailures times.")
-                    }
-
-                    override fun onFlushFailure(
-                        elapsedTime: Duration,
-                        batchSize: Int,
-                        numFailures: Int,
-                        batchRequeued: Boolean,
-                    ) {
-                        val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
-                        println(
-                            "Failed flushing $batchSize updates after $elapsedTimeFormatted, and $numFailures failures. Re-queued: $batchRequeued",
-                        )
-                    }
-
-                    override fun onFlushSuccess(
-                        elapsedTime: Duration,
-                        batchSize: Int,
-                    ) {
-                        val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
-                        println(
-                            "Successfully flushed $batchSize updates after $elapsedTimeFormatted",
-                        )
-                    }
-                },
         )
+    service.setListener(listener)
     service.start()
     // Update a single tag by `1` every second for 100 seconds
     runBlocking {

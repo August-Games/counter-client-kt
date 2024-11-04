@@ -24,7 +24,6 @@ internal class DefaultCounterService(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
     private val config: CounterConfig,
     private val counterApi: CounterApi,
-    private val listener: CounterServiceListener? = null,
 ) : CounterService {
     private val queuedUpdates = ConcurrentHashMap<String, List<CounterUpdate>>()
     private val queuedItemCount = AtomicInteger(0)
@@ -32,6 +31,11 @@ internal class DefaultCounterService(
 
     private var periodicQueuedItemCountUpdateJob: Job? = null
     private var flushJob: Job? = null
+    private var listener: CounterServiceListener? = null
+
+    override fun setListener(listener: CounterServiceListener?) {
+        this.listener = listener
+    }
 
     override fun start() {
         periodicQueuedItemCountUpdateJob =
