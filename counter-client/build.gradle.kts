@@ -82,8 +82,8 @@ publishing {
 
             pom {
                 name.set(artifactName)
-                description.set("A Kotlin DSL for writing bytes to a byte array")
-                url.set("https://github.com/August-Games/byteme")
+                description.set("A Kotlin library for integrating with the August Games Counter service")
+                url.set("https://github.com/August-Games/counter-client-kt")
 
                 licenses {
                     license {
