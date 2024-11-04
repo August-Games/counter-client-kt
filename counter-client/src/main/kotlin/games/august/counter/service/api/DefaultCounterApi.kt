@@ -31,7 +31,7 @@ internal class DefaultCounterApi(
             }
         },
 ) : CounterApi {
-    private val baseUrl = "https://counter-np.august.games"
+    private val baseUrl = "https://counter.august.games"
 //    private val baseUrl = "http://127.0.0.1:8080"
 
     override suspend fun updateCounter(
