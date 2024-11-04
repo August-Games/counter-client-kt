@@ -10,7 +10,6 @@ import games.august.counter.service.api.model.CounterAggregate
 import games.august.counter.service.api.model.GetCountAggregateRequest
 import games.august.counter.service.api.model.UpdateCounterRequest
 import games.august.counter.service.model.CounterUpdate
-import games.august.counter.service.model.FlushFailureException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -23,6 +22,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -356,9 +356,30 @@ class DefaultCounterServiceTest {
                                 return Result.failure(RuntimeException("test api failure"))
                             }
                         },
-                    onPeriodicFlushFailure = {
-                        periodicFlushFailureCount++
-                    },
+                    listener =
+                        object : CounterServiceListener {
+                            override fun onFlushRetry(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                                numFailures: Int,
+                            ) {
+                            }
+
+                            override fun onFlushFailure(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                                numFailures: Int,
+                                batchRequeued: Boolean,
+                            ) {
+                                periodicFlushFailureCount++
+                            }
+
+                            override fun onFlushSuccess(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                            ) {
+                            }
+                        },
                 )
             service.start()
             assertThat(
@@ -439,9 +460,30 @@ class DefaultCounterServiceTest {
                                 return batchUpdateReturnValue
                             }
                         },
-                    onPeriodicFlushFailure = {
-                        periodicFlushFailureCount++
-                    },
+                    listener =
+                        object : CounterServiceListener {
+                            override fun onFlushRetry(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                                numFailures: Int,
+                            ) {
+                            }
+
+                            override fun onFlushFailure(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                                numFailures: Int,
+                                batchRequeued: Boolean,
+                            ) {
+                                periodicFlushFailureCount++
+                            }
+
+                            override fun onFlushSuccess(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                            ) {
+                            }
+                        },
                 )
             service.start()
             assertThat(
@@ -518,9 +560,31 @@ class DefaultCounterServiceTest {
                                 return Result.success(Unit)
                             }
                         },
-                    onPeriodicFlushFailure = {
-                        periodicFlushFailureCount++
-                    },
+                    listener =
+                        object : CounterServiceListener {
+                            override fun onFlushRetry(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                                numFailures: Int,
+                            ) {
+                                periodicFlushFailureCount++
+                            }
+
+                            override fun onFlushFailure(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                                numFailures: Int,
+                                batchRequeued: Boolean,
+                            ) {
+                                periodicFlushFailureCount++
+                            }
+
+                            override fun onFlushSuccess(
+                                elapsedTime: Duration,
+                                batchSize: Int,
+                            ) {
+                            }
+                        },
                 )
             service.start()
 
@@ -578,12 +642,34 @@ class DefaultCounterServiceTest {
                 apiKey = "test-api-key",
             ),
         counterApi: CounterApi = object : CounterApi by counterApiTestDelegate {},
-        onPeriodicFlushFailure: (FlushFailureException) -> Unit = {},
+        listener: CounterServiceListener =
+            object : CounterServiceListener {
+                override fun onFlushRetry(
+                    elapsedTime: Duration,
+                    batchSize: Int,
+                    numFailures: Int,
+                ) {
+                }
+
+                override fun onFlushFailure(
+                    elapsedTime: Duration,
+                    batchSize: Int,
+                    numFailures: Int,
+                    batchRequeued: Boolean,
+                ) {
+                }
+
+                override fun onFlushSuccess(
+                    elapsedTime: Duration,
+                    batchSize: Int,
+                ) {
+                }
+            },
     ): CounterService =
         DefaultCounterService(
             scope = scope,
             config = config,
             counterApi = counterApi,
-            onPeriodicFlushFailure = onPeriodicFlushFailure,
+            listener = listener,
         )
 }
