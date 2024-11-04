@@ -13,4 +13,6 @@ internal data class UpdateCounterRequest(
     val addedCount: BigNumber,
     @SerialName("removed_count")
     val removedCount: BigNumber,
+    @SerialName("idempotency_key")
+    val idempotencyKey: String,
 )

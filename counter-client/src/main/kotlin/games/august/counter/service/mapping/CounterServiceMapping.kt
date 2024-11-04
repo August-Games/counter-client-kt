@@ -13,6 +13,7 @@ internal fun CounterUpdate.toRequest(): UpdateCounterRequest =
         timestamp = formatAsRfc3339(timestamp),
         addedCount = added.toRequest(),
         removedCount = removed.toRequest(),
+        idempotencyKey = idempotencyKey,
     )
 
 internal fun BigNumber.toRequest(): games.august.counter.service.api.model.BigNumber =
