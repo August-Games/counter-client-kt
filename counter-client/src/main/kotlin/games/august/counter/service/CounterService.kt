@@ -3,7 +3,6 @@ package games.august.counter.service
 import games.august.counter.common.model.CounterConfig
 import games.august.counter.service.api.DefaultCounterApi
 import games.august.counter.service.model.CounterUpdate
-import games.august.counter.service.model.FlushFailureException
 
 interface CounterService {
     /**
@@ -39,12 +38,12 @@ interface CounterService {
     companion object {
         fun createDefault(
             config: CounterConfig,
-            onPeriodicFlushFailure: (FlushFailureException) -> Unit = {},
+            listener: CounterServiceListener,
         ): CounterService =
             DefaultCounterService(
                 config = config,
                 counterApi = DefaultCounterApi(),
-                onPeriodicFlushFailure = onPeriodicFlushFailure,
+                listener = listener,
             )
     }
 }

@@ -5,7 +5,6 @@ import games.august.counter.service.api.CounterApi
 import games.august.counter.service.api.model.BatchUpdateCounterRequest
 import games.august.counter.service.mapping.toRequest
 import games.august.counter.service.model.CounterUpdate
-import games.august.counter.service.model.FlushFailureException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,15 +16,15 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.jvm.Throws
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTimedValue
 
 internal class DefaultCounterService(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
     private val config: CounterConfig,
     private val counterApi: CounterApi,
-    private val onPeriodicFlushFailure: (FlushFailureException) -> Unit = {},
+    private val listener: CounterServiceListener? = null,
 ) : CounterService {
     private val queuedUpdates = ConcurrentHashMap<String, List<CounterUpdate>>()
     private val queuedItemCount = AtomicInteger(0)
@@ -48,11 +47,7 @@ internal class DefaultCounterService(
                 delay(config.flushConfig.cooldown)
                 while (isActive) {
                     if (!paused) {
-                        try {
-                            flush()
-                        } catch (e: FlushFailureException) {
-                            onPeriodicFlushFailure(e)
-                        }
+                        flush()
                     }
                     delay(config.flushConfig.cooldown)
                 }
@@ -67,7 +62,6 @@ internal class DefaultCounterService(
         paused = true
     }
 
-    @Throws(FlushFailureException::class)
     override suspend fun shutdown(flushPendingUpdates: Boolean) {
         if (!flushPendingUpdates) {
             periodicQueuedItemCountUpdateJob?.cancel()
@@ -112,20 +106,27 @@ internal class DefaultCounterService(
 
     private fun errorNotStarted(): Nothing = throw IllegalStateException("CounterService.start() must be called before updating counters")
 
-    @Throws(FlushFailureException::class)
     private suspend fun flush(
         batch: List<CounterUpdate> = computeBatch(),
         failureCount: Int = 0,
     ) {
         if (batch.isEmpty()) return
-        counterApi
-            .batchUpdateCounters(
-                apiKey = config.apiKey,
-                batchUpdateCounterRequest =
-                    BatchUpdateCounterRequest(
-                        updates = batch.map(CounterUpdate::toRequest),
-                    ),
-            ).onFailure { e ->
+        val (result, elapsedTime) =
+            measureTimedValue {
+                counterApi
+                    .batchUpdateCounters(
+                        apiKey = config.apiKey,
+                        batchUpdateCounterRequest =
+                            BatchUpdateCounterRequest(
+                                updates = batch.map(CounterUpdate::toRequest),
+                            ),
+                    )
+            }
+        result
+            .onSuccess {
+                listener?.onFlushSuccess(elapsedTime, batch.size)
+            }.onFailure { e ->
+                val newFailureCount = failureCount + 1
                 if (failureCount < config.flushErrorHandling.maxFailureRetries) {
                     val jitter = config.flushErrorHandling.getBackoffJitter()
                     val backoff =
@@ -136,10 +137,15 @@ internal class DefaultCounterService(
                                 maximumValue = config.flushErrorHandling.maxBackoff,
                             )
                     delay(backoff)
-                    flush(batch, failureCount + 1)
+                    listener?.onFlushRetry(elapsedTime + backoff, batch.size, newFailureCount)
+                    flush(batch, newFailureCount)
                 } else {
-                    batchUpdateCounter(batch) // re-add these updates to be tried again later at some point
-                    throw FlushFailureException(e, "Failed to flush batch after $failureCount attempts")
+                    if (config.flushErrorHandling.reAddFailedUpdates) {
+                        listener?.onFlushFailure(elapsedTime, batch.size, newFailureCount, true)
+                        batchUpdateCounter(batch)
+                    } else {
+                        listener?.onFlushFailure(elapsedTime, batch.size, newFailureCount, false)
+                    }
                 }
             }
     }
