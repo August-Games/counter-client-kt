@@ -141,14 +141,14 @@ internal class DefaultCounterService(
                                 maximumValue = config.flushErrorHandling.maxBackoff,
                             )
                     delay(backoff)
-                    listener?.onFlushRetry(elapsedTime + backoff, batch.size, newFailureCount)
+                    listener?.onFlushRetry(e, elapsedTime + backoff, batch.size, newFailureCount)
                     flush(batch, newFailureCount)
                 } else {
                     if (config.flushErrorHandling.reAddFailedUpdates) {
-                        listener?.onFlushFailure(elapsedTime, batch.size, newFailureCount, true)
+                        listener?.onFlushFailure(e, elapsedTime, batch.size, newFailureCount, true)
                         batchUpdateCounter(batch)
                     } else {
-                        listener?.onFlushFailure(elapsedTime, batch.size, newFailureCount, false)
+                        listener?.onFlushFailure(e, elapsedTime, batch.size, newFailureCount, false)
                     }
                 }
             }

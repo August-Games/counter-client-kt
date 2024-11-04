@@ -360,6 +360,7 @@ class DefaultCounterServiceTest {
             service.setListener(
                 object : CounterServiceListener {
                     override fun onFlushRetry(
+                        throwable: Throwable,
                         elapsedTime: Duration,
                         batchSize: Int,
                         numFailures: Int,
@@ -367,6 +368,7 @@ class DefaultCounterServiceTest {
                     }
 
                     override fun onFlushFailure(
+                        throwable: Throwable,
                         elapsedTime: Duration,
                         batchSize: Int,
                         numFailures: Int,
@@ -465,6 +467,7 @@ class DefaultCounterServiceTest {
             service.setListener(
                 object : CounterServiceListener {
                     override fun onFlushRetry(
+                        throwable: Throwable,
                         elapsedTime: Duration,
                         batchSize: Int,
                         numFailures: Int,
@@ -472,6 +475,7 @@ class DefaultCounterServiceTest {
                     }
 
                     override fun onFlushFailure(
+                        throwable: Throwable,
                         elapsedTime: Duration,
                         batchSize: Int,
                         numFailures: Int,
@@ -566,6 +570,7 @@ class DefaultCounterServiceTest {
             service.setListener(
                 object : CounterServiceListener {
                     override fun onFlushRetry(
+                        throwable: Throwable,
                         elapsedTime: Duration,
                         batchSize: Int,
                         numFailures: Int,
@@ -574,6 +579,7 @@ class DefaultCounterServiceTest {
                     }
 
                     override fun onFlushFailure(
+                        throwable: Throwable,
                         elapsedTime: Duration,
                         batchSize: Int,
                         numFailures: Int,

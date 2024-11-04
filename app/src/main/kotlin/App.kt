@@ -17,15 +17,18 @@ fun main() {
     val listener =
         object : CounterServiceListener {
             override fun onFlushRetry(
+                throwable: Throwable,
                 elapsedTime: Duration,
                 batchSize: Int,
                 numFailures: Int,
             ) {
                 val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
                 println("Retrying flush after $elapsedTimeFormatted for $batchSize updates. Failed $numFailures times.")
+                throwable.printStackTrace()
             }
 
             override fun onFlushFailure(
+                throwable: Throwable,
                 elapsedTime: Duration,
                 batchSize: Int,
                 numFailures: Int,
@@ -35,6 +38,7 @@ fun main() {
                 println(
                     "Failed flushing $batchSize updates after $elapsedTimeFormatted, and $numFailures failures. Re-queued: $batchRequeued",
                 )
+                throwable.printStackTrace()
             }
 
             override fun onFlushSuccess(
