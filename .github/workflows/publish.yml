@@ -19,6 +19,12 @@ jobs:
           java-version: 17
           distribution: 'zulu'
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Grant execute permission to close-and-release script
+        run: chmod +x scripts/close-and-release-staging-repositories.sh
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -45,3 +51,6 @@ jobs:
           SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
           SIGNING_KEY_LOCATION: /home/runner/work/counter/secring.gpg
+
+      - name: Close and release staging repository
+        run: scripts/close-and-release-staging-repositories.sh ${{ secrets.SONATYPE_USERNAME }} ${{ secrets.SONATYPE_PASSWORD }} games.august counter-client ${{ secrets.DISCORD_PUBLISHING_WEBHOOK_URL }}
