@@ -10,6 +10,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -17,6 +18,7 @@ fun main() {
     val listener =
         object : CounterServiceListener {
             override fun onFlushStart(
+                queueSize: Int,
                 batchSize: Int,
                 batchId: String,
             ) {
@@ -67,6 +69,7 @@ fun main() {
             config =
                 CounterConfig(
                     apiKey = "",
+                    timeResolution = 1.minutes,
                     flushErrorHandling =
                         CounterConfig.FlushErrorHandling(
                             reAddFailedUpdates = false,
@@ -93,7 +96,7 @@ fun main() {
                 println("Update failed: $countersAdded")
             }
             println("Added counter $countersAdded to \"test_tag\"!")
-            delay(100.milliseconds)
+            delay(50.milliseconds)
             if (++countersAdded >= 200) {
                 service.shutdown(flushPendingUpdates = true)
                 break

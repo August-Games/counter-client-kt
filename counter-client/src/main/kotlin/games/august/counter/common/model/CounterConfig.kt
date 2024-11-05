@@ -7,6 +7,7 @@ import kotlin.time.Duration.Companion.seconds
 
 data class CounterConfig(
     val apiKey: String,
+    val timeResolution: Duration,
     val flushConfig: FlushConfig = FlushConfig(),
     val flushErrorHandling: FlushErrorHandling = FlushErrorHandling(),
 ) {

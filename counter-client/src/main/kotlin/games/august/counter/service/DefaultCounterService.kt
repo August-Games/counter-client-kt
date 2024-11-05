@@ -14,9 +14,11 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.pow
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTimedValue
 
@@ -29,7 +31,6 @@ internal class DefaultCounterService(
     private val queuedItemCount = AtomicInteger(0)
     private var paused: Boolean = false
 
-    private var periodicQueuedItemCountUpdateJob: Job? = null
     private var flushJob: Job? = null
     private var listener: CounterServiceListener? = null
 
@@ -38,19 +39,14 @@ internal class DefaultCounterService(
     }
 
     override fun start() {
-        periodicQueuedItemCountUpdateJob =
-            scope.launch {
-                // Periodically reset queuedItemCount in case of inconsistencies due to high concurrency
-                while (isActive) {
-                    queuedItemCount.updateAndGet { queuedUpdates.size } // updates.size performs a full sweep to count
-                    delay(60.seconds)
-                }
-            }
         flushJob =
             scope.launch {
                 delay(config.flushConfig.cooldown)
                 while (isActive) {
                     if (!paused) {
+                        collapseQueue()
+                        // After we've collapsed everything down, ideally we can send it all off in a single batch now,
+                        // depending on the config passed in.
                         flush()
                     }
                     delay(config.flushConfig.cooldown)
@@ -68,22 +64,20 @@ internal class DefaultCounterService(
 
     override suspend fun shutdown(flushPendingUpdates: Boolean) {
         if (!flushPendingUpdates) {
-            periodicQueuedItemCountUpdateJob?.cancel()
             flushJob?.cancel()
             scope.cancel()
             return
         }
+        collapseQueue()
         var batch: List<CounterUpdate> = computeBatch()
         while (batch.isNotEmpty()) {
             flush(batch)
             batch = computeBatch()
         }
-        periodicQueuedItemCountUpdateJob?.cancelAndJoin()
         flushJob?.cancelAndJoin()
     }
 
     override fun updateCounter(update: CounterUpdate): Boolean {
-        periodicQueuedItemCountUpdateJob ?: errorNotStarted()
         flushJob ?: errorNotStarted()
         val size = queuedItemCount.get()
         if (size >= config.flushConfig.maxBufferSize) return false
@@ -95,7 +89,6 @@ internal class DefaultCounterService(
     }
 
     override fun batchUpdateCounter(updates: List<CounterUpdate>): Boolean {
-        periodicQueuedItemCountUpdateJob ?: errorNotStarted()
         flushJob ?: errorNotStarted()
         val size = queuedItemCount.get()
         if (size >= config.flushConfig.maxBufferSize) return false
@@ -156,6 +149,26 @@ internal class DefaultCounterService(
             }
     }
 
+    private fun collapseQueue() {
+        // Perform a client-side collapse BEFORE calculating the batch, so that we cram as much as
+        // we can into the batch as possible. No need for all this processing to happen server-side if
+        // we can do it here. Though the backend will ensure it's enforced server-side anyway.
+        // This way is less compute for the backend.
+        for (key in queuedUpdates.keys.iterator()) {
+            queuedUpdates.compute(key) { k, v ->
+                val totalBefore = v?.sumOf { it.added.remaining }
+                val collapsed = v?.collapse(config.timeResolution)
+                val totalAfter = collapsed?.sumOf { it.added.remaining }
+                println(
+                    "Collapsed $key ${v?.size} down to ${collapsed?.size}, total before: $totalBefore, after: $totalAfter",
+                )
+                collapsed
+            }
+        }
+        // updates.size performs a full sweep to count
+        queuedItemCount.updateAndGet { queuedUpdates.size }
+    }
+
     private fun computeBatch(): List<CounterUpdate> {
         val maxBatchSize = config.flushConfig.maxBatchSize
         val batch = mutableListOf<CounterUpdate>()
@@ -186,5 +199,27 @@ internal class DefaultCounterService(
         }
         queuedItemCount.updateAndGet { it - added }
         return batch
+    }
+
+    private fun List<CounterUpdate>.collapse(timeResolution: Duration): List<CounterUpdate> {
+        // Group updates by collapsing timestamps to the nearest timeResolution boundary
+        val groupedUpdates =
+            this.groupBy { update ->
+                val epochMillis = update.timestamp.toEpochMilliseconds()
+                val resolutionMillis = timeResolution.inWholeMilliseconds
+                val truncatedMillis = (epochMillis / resolutionMillis) * resolutionMillis
+                Instant.fromEpochMilliseconds(truncatedMillis)
+            }
+
+        // For each group, combine all updates into a single update with summed added and removed counts
+        return groupedUpdates.map { (truncatedTimestamp, updatesInGroup) ->
+            updatesInGroup
+                .reduce { acc, update ->
+                    acc.copy(
+                        added = acc.added.add(update.added),
+                        removed = acc.removed.add(update.removed),
+                    )
+                }.copy(timestamp = truncatedTimestamp)
+        }
     }
 }

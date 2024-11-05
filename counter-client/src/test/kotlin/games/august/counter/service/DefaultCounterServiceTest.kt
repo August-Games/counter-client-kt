@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -88,6 +89,7 @@ class DefaultCounterServiceTest {
                     config =
                         CounterConfig(
                             apiKey = "test_key",
+                            timeResolution = 1.seconds,
                             flushConfig =
                                 FlushConfig(
                                     maxBufferSize = 0,
@@ -129,6 +131,7 @@ class DefaultCounterServiceTest {
                     config =
                         CounterConfig(
                             apiKey = "test_key",
+                            timeResolution = 1.seconds,
                             flushConfig =
                                 FlushConfig(
                                     maxBufferSize = 1,
@@ -170,6 +173,7 @@ class DefaultCounterServiceTest {
                     config =
                         CounterConfig(
                             apiKey = "test_key",
+                            timeResolution = 1.seconds,
                             flushConfig =
                                 FlushConfig(
                                     maxBufferSize = 100,
@@ -215,6 +219,7 @@ class DefaultCounterServiceTest {
                     config =
                         CounterConfig(
                             apiKey = "test_key",
+                            timeResolution = 1.seconds,
                             flushConfig =
                                 FlushConfig(
                                     maxBufferSize = 100,
@@ -258,6 +263,7 @@ class DefaultCounterServiceTest {
                     config =
                         CounterConfig(
                             apiKey = "test_key",
+                            timeResolution = 1.seconds,
                             flushConfig =
                                 FlushConfig(
                                     cooldown = 5.seconds,
@@ -333,6 +339,7 @@ class DefaultCounterServiceTest {
                     config =
                         CounterConfig(
                             apiKey = "test_key",
+                            timeResolution = 1.seconds,
                             flushConfig =
                                 FlushConfig(
                                     cooldown = 5.seconds,
@@ -360,6 +367,7 @@ class DefaultCounterServiceTest {
             service.setListener(
                 object : CounterServiceListener {
                     override fun onFlushStart(
+                        queueSize: Int,
                         batchSize: Int,
                         batchId: String,
                     ) {
@@ -449,6 +457,7 @@ class DefaultCounterServiceTest {
                     config =
                         CounterConfig(
                             apiKey = "test_key",
+                            timeResolution = 1.seconds,
                             flushConfig =
                                 FlushConfig(
                                     cooldown = 5.seconds,
@@ -476,6 +485,7 @@ class DefaultCounterServiceTest {
             service.setListener(
                 object : CounterServiceListener {
                     override fun onFlushStart(
+                        queueSize: Int,
                         batchSize: Int,
                         batchId: String,
                     ) {
@@ -560,6 +570,7 @@ class DefaultCounterServiceTest {
                     config =
                         CounterConfig(
                             apiKey = "test_key",
+                            timeResolution = 1.seconds,
                             flushConfig =
                                 FlushConfig(
                                     cooldown = 5.seconds,
@@ -588,6 +599,7 @@ class DefaultCounterServiceTest {
             service.setListener(
                 object : CounterServiceListener {
                     override fun onFlushStart(
+                        queueSize: Int,
                         batchSize: Int,
                         batchId: String,
                     ) {
@@ -676,6 +688,7 @@ class DefaultCounterServiceTest {
         config: CounterConfig =
             CounterConfig(
                 apiKey = "test-api-key",
+                timeResolution = 1.minutes,
             ),
         counterApi: CounterApi = object : CounterApi by counterApiTestDelegate {},
     ): CounterService =

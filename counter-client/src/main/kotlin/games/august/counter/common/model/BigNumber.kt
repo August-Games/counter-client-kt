@@ -4,6 +4,18 @@ class BigNumber private constructor(
     val billions: Long,
     val remaining: Int,
 ) {
+    operator fun plus(bigNumber: BigNumber): BigNumber = add(bigNumber)
+
+    fun add(bigNumber: BigNumber): BigNumber {
+        val totalRemaining = (remaining.toLong() + bigNumber.remaining.toLong())
+        val extraBillions = totalRemaining / BILLION
+        val leftover = (totalRemaining % BILLION).toInt()
+        return BigNumber(
+            billions = billions + bigNumber.billions + extraBillions,
+            remaining = leftover,
+        )
+    }
+
     companion object {
         private const val BILLION = 1_000_000_000
 
