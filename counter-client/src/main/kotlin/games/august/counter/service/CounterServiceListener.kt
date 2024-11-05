@@ -4,6 +4,7 @@ import kotlin.time.Duration
 
 interface CounterServiceListener {
     fun onFlushStart(
+        queueSize: Int,
         batchSize: Int,
         batchId: String,
     )

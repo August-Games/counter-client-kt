@@ -116,7 +116,7 @@ internal class DefaultCounterService(
     ) {
         if (batch.isEmpty()) return
         val batchId = System.identityHashCode(batch).toString(16)
-        listener?.onFlushStart(batch.size, batchId)
+        listener?.onFlushStart(queuedItemCount.get(), batch.size, batchId)
         val (result, elapsedTime) =
             measureTimedValue {
                 counterApi
