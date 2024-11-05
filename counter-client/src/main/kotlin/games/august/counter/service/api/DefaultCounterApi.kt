@@ -12,6 +12,7 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.request
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.isSuccess
@@ -31,7 +32,8 @@ internal class DefaultCounterApi(
             }
         },
 ) : CounterApi {
-    private val baseUrl = "https://counter.august.games"
+    private val baseUrl = "https://counter-backend-service-369380608109.us-east4.run.app"
+//    private val baseUrl = "https://counter.august.games"
 //    private val baseUrl = "http://127.0.0.1:8080"
 
     override suspend fun updateCounter(
