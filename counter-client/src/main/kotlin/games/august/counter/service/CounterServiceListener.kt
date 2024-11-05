@@ -3,10 +3,16 @@ package games.august.counter.service
 import kotlin.time.Duration
 
 interface CounterServiceListener {
+    fun onFlushStart(
+        batchSize: Int,
+        batchId: String,
+    )
+
     fun onFlushRetry(
         throwable: Throwable,
         elapsedTime: Duration,
         batchSize: Int,
+        batchId: String,
         numFailures: Int,
     )
 
@@ -14,6 +20,7 @@ interface CounterServiceListener {
         throwable: Throwable,
         elapsedTime: Duration,
         batchSize: Int,
+        batchId: String,
         numFailures: Int,
         batchRequeued: Boolean,
     )
@@ -21,5 +28,6 @@ interface CounterServiceListener {
     fun onFlushSuccess(
         elapsedTime: Duration,
         batchSize: Int,
+        batchId: String,
     )
 }

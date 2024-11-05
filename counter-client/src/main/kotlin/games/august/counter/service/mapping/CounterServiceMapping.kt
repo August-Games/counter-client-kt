@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter
 
 internal fun CounterUpdate.toRequest(): UpdateCounterRequest =
     UpdateCounterRequest(
+        id = id,
         tag = tag,
         timestamp = formatAsRfc3339(timestamp),
         addedCount = added.toRequest(),

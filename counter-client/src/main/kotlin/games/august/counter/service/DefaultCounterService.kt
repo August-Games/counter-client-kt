@@ -115,6 +115,8 @@ internal class DefaultCounterService(
         failureCount: Int = 0,
     ) {
         if (batch.isEmpty()) return
+        val batchId = System.identityHashCode(batch).toString(16)
+        listener?.onFlushStart(batch.size, batchId)
         val (result, elapsedTime) =
             measureTimedValue {
                 counterApi
@@ -128,7 +130,7 @@ internal class DefaultCounterService(
             }
         result
             .onSuccess {
-                listener?.onFlushSuccess(elapsedTime, batch.size)
+                listener?.onFlushSuccess(elapsedTime, batch.size, batchId)
             }.onFailure { e ->
                 val newFailureCount = failureCount + 1
                 if (failureCount < config.flushErrorHandling.maxFailureRetries) {
@@ -141,14 +143,14 @@ internal class DefaultCounterService(
                                 maximumValue = config.flushErrorHandling.maxBackoff,
                             )
                     delay(backoff)
-                    listener?.onFlushRetry(e, elapsedTime + backoff, batch.size, newFailureCount)
+                    listener?.onFlushRetry(e, elapsedTime + backoff, batch.size, batchId, newFailureCount)
                     flush(batch, newFailureCount)
                 } else {
                     if (config.flushErrorHandling.reAddFailedUpdates) {
-                        listener?.onFlushFailure(e, elapsedTime, batch.size, newFailureCount, true)
+                        listener?.onFlushFailure(e, elapsedTime, batch.size, batchId, newFailureCount, true)
                         batchUpdateCounter(batch)
                     } else {
-                        listener?.onFlushFailure(e, elapsedTime, batch.size, newFailureCount, false)
+                        listener?.onFlushFailure(e, elapsedTime, batch.size, batchId, newFailureCount, false)
                     }
                 }
             }

@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 internal data class UpdateCounterRequest(
+    @SerialName("id")
+    val id: String,
     @SerialName("tag")
     val tag: String,
     @SerialName("timestamp")

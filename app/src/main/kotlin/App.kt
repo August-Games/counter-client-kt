@@ -16,14 +16,22 @@ import kotlin.time.DurationUnit
 fun main() {
     val listener =
         object : CounterServiceListener {
+            override fun onFlushStart(
+                batchSize: Int,
+                batchId: String,
+            ) {
+                println("Starting flush for batch $batchId with $batchSize updates.")
+            }
+
             override fun onFlushRetry(
                 throwable: Throwable,
                 elapsedTime: Duration,
                 batchSize: Int,
+                batchId: String,
                 numFailures: Int,
             ) {
                 val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
-                println("Retrying flush after $elapsedTimeFormatted for $batchSize updates. Failed $numFailures times.")
+                println("Retrying flush for batch $batchId with $batchSize updates after $elapsedTimeFormatted. Failed $numFailures times.")
                 throwable.printStackTrace()
             }
 
@@ -31,12 +39,13 @@ fun main() {
                 throwable: Throwable,
                 elapsedTime: Duration,
                 batchSize: Int,
+                batchId: String,
                 numFailures: Int,
                 batchRequeued: Boolean,
             ) {
                 val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
                 println(
-                    "Failed flushing $batchSize updates after $elapsedTimeFormatted, and $numFailures failures. Re-queued: $batchRequeued",
+                    "Failed flush for batch $batchId with $batchSize updates after $elapsedTimeFormatted, and $numFailures failures. Re-queued: $batchRequeued",
                 )
                 throwable.printStackTrace()
             }
@@ -44,10 +53,11 @@ fun main() {
             override fun onFlushSuccess(
                 elapsedTime: Duration,
                 batchSize: Int,
+                batchId: String,
             ) {
                 val elapsedTimeFormatted = elapsedTime.toString(DurationUnit.SECONDS)
                 println(
-                    "Successfully flushed $batchSize updates after $elapsedTimeFormatted",
+                    "Successful flush for batch $batchId with $batchSize updates after $elapsedTimeFormatted",
                 )
             }
         }
@@ -56,7 +66,7 @@ fun main() {
         CounterService.createDefault(
             config =
                 CounterConfig(
-                    apiKey = "insert-api-key-here",
+                    apiKey = "",
                     flushErrorHandling =
                         CounterConfig.FlushErrorHandling(
                             reAddFailedUpdates = false,
@@ -75,14 +85,14 @@ fun main() {
                 service.updateCounter(
                     update =
                         CounterUpdate(
-                            tag = "example-app-counter",
+                            tag = "test_tag",
                             added = BigNumber.create(amount = 1),
                         ),
                 )
             if (!added) {
                 println("Update failed: $countersAdded")
             }
-            println("Added counter $countersAdded to \"example-app-counter\"!")
+            println("Added counter $countersAdded to \"test_tag\"!")
             delay(100.milliseconds)
             if (++countersAdded >= 200) {
                 service.shutdown(flushPendingUpdates = true)
