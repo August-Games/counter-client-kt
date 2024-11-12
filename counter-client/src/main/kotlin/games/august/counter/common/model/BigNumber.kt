@@ -19,6 +19,8 @@ class BigNumber private constructor(
     companion object {
         private const val BILLION = 1_000_000_000
 
+        val ZERO: BigNumber = BigNumber(0L, 0)
+
         fun create(amount: Long): BigNumber {
             val billions = amount / BILLION
             return BigNumber(

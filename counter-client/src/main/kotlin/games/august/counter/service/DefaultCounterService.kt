@@ -159,10 +159,14 @@ internal class DefaultCounterService(
                 val totalBefore = v?.sumOf { it.added.remaining }
                 val collapsed = v?.collapse(config.timeResolution)
                 val totalAfter = collapsed?.sumOf { it.added.remaining }
-                println(
-                    "Collapsed $key ${v?.size} down to ${collapsed?.size}, total before: $totalBefore, after: $totalAfter",
-                )
-                collapsed
+                if (!collapsed.isNullOrEmpty()) {
+                    println(
+                        "Collapsed $key ${v.size} down to ${collapsed?.size}, total before: $totalBefore, after: $totalAfter",
+                    )
+                    collapsed
+                } else {
+                    null
+                }
             }
         }
         // updates.size performs a full sweep to count
