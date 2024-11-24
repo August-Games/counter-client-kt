@@ -12,7 +12,7 @@ plugins {
 
 val groupName = "games.august"
 val artifactName = "counter-client"
-val versionName = "0.0.10"
+val versionName = "0.0.11"
 group = groupName
 version = versionName
 
