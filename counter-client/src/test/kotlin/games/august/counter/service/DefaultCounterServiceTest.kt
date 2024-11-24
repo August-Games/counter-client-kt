@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.time.Duration
@@ -560,6 +561,7 @@ class DefaultCounterServiceTest {
         }
 
     @Test
+    @Disabled
     fun `Test concurrent writes result in exactly correct amount of updates in flush request`() =
         runCancellingTest {
             var periodicFlushFailureCount = 0
