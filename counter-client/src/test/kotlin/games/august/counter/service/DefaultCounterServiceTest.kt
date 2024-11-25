@@ -20,13 +20,13 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.times
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DefaultCounterServiceTest {
@@ -561,7 +561,6 @@ class DefaultCounterServiceTest {
         }
 
     @Test
-    @Disabled
     fun `Test concurrent writes result in exactly correct amount of updates in flush request`() =
         runCancellingTest {
             var periodicFlushFailureCount = 0
@@ -646,19 +645,24 @@ class DefaultCounterServiceTest {
                     launch {
                         service
                             .updateCounter(
-                                update = CounterUpdate(tag = "test-tag", added = BigNumber.create(100), timestamp = getNow()),
+                                update =
+                                    CounterUpdate(
+                                        tag = "test-tag",
+                                        added = BigNumber.create(100),
+                                        // 10 milliseconds diff per update, time resolution of 1 second
+                                        // So that's 10 seconds of distributed updates
+                                        // So that's 10 updates in the request
+                                        timestamp = getNow() + (i * 10.milliseconds),
+                                    ),
                             )
                     }
             }
             joinAll(*jobs.toTypedArray())
             jobs.clear()
             assertThat(flushRequests).isEmpty()
-            advanceTimeBy(1.milliseconds)
-            repeat(100) {
-                advanceTimeBy(5.seconds)
-                assertThat(flushRequests).hasSize(it + 1)
-                assertThat(flushRequests[it].updates).hasSize(10)
-            }
+            advanceTimeBy(20.seconds)
+            assertThat(flushRequests).hasSize(1)
+            assertThat(flushRequests[0].updates).hasSize(10)
         }
 
     private fun runCancellingTest(block: suspend TestScope.() -> Unit) {
